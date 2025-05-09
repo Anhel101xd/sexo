@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Captura de Datos Excel</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+    }
+    .card {
+      background-color: #1f2a38;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 {
+      text-align: center;
+      color: #00e676;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: 600;
+      margin-top: 15px;
+      display: block;
+      color: #cfd8dc;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+      border: 1px solid #555;
+      background-color: #263238;
+      color: white;
+      border-radius: 10px;
+    }
+    input:focus, select:focus {
+      border-color: #00e676;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      background-color: #00e676;
+      color: #000;
+      border: none;
+      padding: 15px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s, transform 0.2s;
+    }
+    button:hover {
+      background-color: #00c853;
+      transform: scale(1.02);
+    }
+    #descargarExcel {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #4caf50;
+      text-decoration: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📊 Captura de Datos Excel</h2>
+
+    <label for="inputExcel">Subir archivo Excel</label>
+    <input type="file" id="inputExcel" accept=".xlsx, .xls">
+
+    <label for="dato1">Dato para A1 (Obligatorio):</label>
+    <select id="dato1">
+      <option value="">Selecciona una opción</option>
+      <option value="Bueno">Bueno</option>
+      <option value="Regular">Regular</option>
+      <option value="Malo">Malo</option>
+    </select>
+
+    <input type="text" id="dato2" placeholder="Dato para B1 (Opcional)">
+    <input type="text" id="dato3" placeholder="Dato para C1 (Obligatorio)">
+    <input type="text" id="dato4" placeholder="Dato para D1 (Opcional)">
+    <input type="text" id="dato5" placeholder="Dato para E1 (Opcional)">
+
+    <button onclick="guardarEnExcel()">💾 Guardar en Excel</button>
+    <a id="descargarExcel">⬇️ Descargar archivo modificado</a>
+  </div>
+
+  <script>
+    let workbook;
+
+    document.getElementById('inputExcel').addEventListener('change', (e) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const data = new Uint8Array(event.target.result);
+        workbook = XLSX.read(data, { type: 'array' });
+
+        if (!workbook.SheetNames.length) {
+          alert('El archivo Excel no contiene hojas.');
+          workbook = null;
+          return;
+        }
+
+        alert('Archivo cargado correctamente.');
+      };
+      reader.readAsArrayBuffer(e.target.files[0]);
+    });
+
+    function guardarEnExcel() {
+      if (!workbook) {
+        alert('Primero debes subir un archivo Excel.');
+        return;
+      }
+
+      const hoja = workbook.Sheets[workbook.SheetNames[0]];
+      const datos = [
+        { id: 'dato1', celda: 'A1', obligatorio: true },
+        { id: 'dato2', celda: 'B1', obligatorio: false },
+        { id: 'dato3', celda: 'C1', obligatorio: true },
+        { id: 'dato4', celda: 'D1', obligatorio: false },
+        { id: 'dato5', celda: 'E1', obligatorio: false }
+      ];
+
+      for (const { id, celda, obligatorio } of datos) {
+        const valor = document.getElementById(id).value.trim();
+        if (obligatorio && valor === "") {
+          alert(`El campo en ${celda} es obligatorio.`);
+          return;
+        }
+        if (valor !== "") {
+          hoja[celda] = { t: 's', v: valor };
+        }
+      }
+
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.getElementById('descargarExcel');
+      link.href = url;
+      link.download = 'plantilla_modificada.xlsx';
+      link.style.display = 'block';
+      link.textContent = '⬇️ Descargar archivo modificado';
+      alert('Datos guardados correctamente.');
+    }
+  </script>
+</body>
+</html>
